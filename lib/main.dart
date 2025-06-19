@@ -28,10 +28,13 @@ class MyApp extends StatelessWidget {
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
   var favorites = <WordPair>{};
-  var pairs = <WordPair>[];
+  var notLikedPairs = <WordPair>{};
 
   void getNext() {
     current = WordPair.random();
+    if (!favorites.contains(current)) {
+      notLikedPairs.add(current);
+    }
     notifyListeners();
   }
 
@@ -40,6 +43,7 @@ class MyAppState extends ChangeNotifier {
       favorites.remove(current);
     } else {
       favorites.add(current);
+      notLikedPairs.remove(current);
     }
     notifyListeners();
   }
@@ -109,14 +113,16 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class GeneratorPage extends StatelessWidget {
-  ScrollController _controller = ScrollController();
+ScrollController _controllerTop = ScrollController();
+ScrollController _controllerBottom = ScrollController();
 
+class GeneratorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var pair = appState.current;
-    var pairs = appState.pairs;
+    var notLikedPairs = appState.notLikedPairs;
+    var favorites = appState.favorites;
 
     IconData icon;
     if (appState.favorites.contains(pair)) {
@@ -131,12 +137,12 @@ class GeneratorPage extends StatelessWidget {
         children: [
           Expanded(
             child: ListView.builder(
-              controller: _controller,
+              controller: _controllerTop,
               scrollDirection: Axis.vertical,
               shrinkWrap: true,
-              itemCount: pairs.length,
+              itemCount: favorites.length,
               itemBuilder: (context, index) {
-                var currentPair = pairs.elementAt(index);
+                var currentPair = favorites.elementAt(index);
                 IconData icon = appState.favorites.contains(currentPair)
                     ? Icons.favorite
                     : Icons.favorite_border;
@@ -170,21 +176,43 @@ class GeneratorPage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   appState.getNext();
-                  appState.pairs.add(pair);
-                  _controller.animateTo(_controller.position.maxScrollExtent,
-                      duration: Duration(milliseconds: 300),
-                      curve: Curves.easeInOut);
+                  updateControllers();
                 },
                 child: Text('Next'),
               ),
             ],
           ),
           Expanded(
-            child: Container(),
-          )
+            child: ListView.builder(
+              controller: _controllerBottom,
+              scrollDirection: Axis.vertical,
+              itemCount: notLikedPairs.length,
+              reverse: true,
+              itemBuilder: (context, index) {
+                var currentPair = notLikedPairs.elementAt(index);
+                IconData icon = appState.favorites.contains(currentPair)
+                    ? Icons.favorite
+                    : Icons.favorite_border;
+                return ListTile(
+                  title: Text(currentPair.asLowerCase),
+                  leading: Icon(icon),
+                  onTap: () {
+                    appState.setCurrent(currentPair);
+                  },
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  void updateControllers() {
+    _controllerTop.animateTo(_controllerTop.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+    _controllerBottom.animateTo(_controllerBottom.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
   }
 }
 
