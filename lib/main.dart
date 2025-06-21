@@ -6,6 +6,9 @@ void main() {
   runApp(MyApp());
 }
 
+// this is needed to save the state of the scroll
+final pageBucket = PageStorageBucket();
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -50,6 +53,11 @@ class MyAppState extends ChangeNotifier {
 
   void setCurrent(WordPair pair) {
     current = pair;
+    notifyListeners();
+  }
+
+  void removeFavorite(WordPair pair) {
+    favorites.remove(pair);
     notifyListeners();
   }
 }
@@ -113,10 +121,22 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-ScrollController _controllerTop = ScrollController();
-ScrollController _controllerBottom = ScrollController();
+class GeneratorPage extends StatefulWidget {
+  @override
+  State<GeneratorPage> createState() => _GeneratorPageState();
+}
 
-class GeneratorPage extends StatelessWidget {
+class _GeneratorPageState extends State<GeneratorPage> {
+  final ScrollController _controllerTop = ScrollController();
+  final ScrollController _controllerBottom = ScrollController();
+
+  void updateControllers() {
+    _controllerTop.animateTo(_controllerTop.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+    _controllerBottom.animateTo(_controllerBottom.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
@@ -136,24 +156,28 @@ class GeneratorPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Expanded(
-            child: ListView.builder(
-              controller: _controllerTop,
-              scrollDirection: Axis.vertical,
-              shrinkWrap: true,
-              itemCount: favorites.length,
-              itemBuilder: (context, index) {
-                var currentPair = favorites.elementAt(index);
-                IconData icon = appState.favorites.contains(currentPair)
-                    ? Icons.favorite
-                    : Icons.favorite_border;
-                return ListTile(
-                  title: Text(currentPair.asLowerCase),
-                  leading: Icon(icon),
-                  onTap: () {
-                    appState.setCurrent(currentPair);
-                  },
-                );
-              },
+            child: PageStorage(
+              bucket: pageBucket,
+              child: ListView.builder(
+                key: PageStorageKey<String>('favorites_list'),
+                controller: _controllerTop,
+                scrollDirection: Axis.vertical,
+                shrinkWrap: true,
+                itemCount: favorites.length,
+                itemBuilder: (context, index) {
+                  var currentPair = favorites.elementAt(index);
+                  IconData icon = appState.favorites.contains(currentPair)
+                      ? Icons.favorite
+                      : Icons.favorite_border;
+                  return ListTile(
+                    title: Text(currentPair.asLowerCase),
+                    leading: Icon(icon),
+                    onTap: () {
+                      appState.setCurrent(currentPair);
+                    },
+                  );
+                },
+              ),
             ),
           ),
           Text(
@@ -183,36 +207,33 @@ class GeneratorPage extends StatelessWidget {
             ],
           ),
           Expanded(
-            child: ListView.builder(
-              controller: _controllerBottom,
-              scrollDirection: Axis.vertical,
-              itemCount: notLikedPairs.length,
-              reverse: true,
-              itemBuilder: (context, index) {
-                var currentPair = notLikedPairs.elementAt(index);
-                IconData icon = appState.favorites.contains(currentPair)
-                    ? Icons.favorite
-                    : Icons.favorite_border;
-                return ListTile(
-                  title: Text(currentPair.asLowerCase),
-                  leading: Icon(icon),
-                  onTap: () {
-                    appState.setCurrent(currentPair);
-                  },
-                );
-              },
+            child: PageStorage(
+              bucket: pageBucket,
+              child: ListView.builder(
+                key: PageStorageKey<String>('pairs_list'),
+                controller: _controllerBottom,
+                scrollDirection: Axis.vertical,
+                itemCount: notLikedPairs.length,
+                reverse: true,
+                itemBuilder: (context, index) {
+                  var currentPair = notLikedPairs.elementAt(index);
+                  IconData icon = appState.favorites.contains(currentPair)
+                      ? Icons.favorite
+                      : Icons.favorite_border;
+                  return ListTile(
+                    title: Text(currentPair.asLowerCase),
+                    leading: Icon(icon),
+                    onTap: () {
+                      appState.setCurrent(currentPair);
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  void updateControllers() {
-    _controllerTop.animateTo(_controllerTop.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
-    _controllerBottom.animateTo(_controllerBottom.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
   }
 }
 
@@ -264,7 +285,11 @@ class FavoritesPage extends StatelessWidget {
           var pair = favorites.elementAt(index);
           return ListTile(
             title: Text(pair.asLowerCase),
-            leading: Icon(Icons.favorite),
+            leading: IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: () {
+                  appState.removeFavorite(pair);
+                }),
             onTap: () {
               appState.current = pair;
             },
