@@ -31,12 +31,12 @@ class MyApp extends StatelessWidget {
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
   var favorites = <WordPair>{};
-  var notLikedPairs = <WordPair>{};
+  var pairs = <WordPair>{};
 
   void getNext() {
     current = WordPair.random();
     if (!favorites.contains(current)) {
-      notLikedPairs.add(current);
+      pairs.add(current);
     }
     notifyListeners();
   }
@@ -46,7 +46,7 @@ class MyAppState extends ChangeNotifier {
       favorites.remove(current);
     } else {
       favorites.add(current);
-      notLikedPairs.remove(current);
+      pairs.remove(current);
     }
     notifyListeners();
   }
@@ -141,7 +141,7 @@ class _GeneratorPageState extends State<GeneratorPage> {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var pair = appState.current;
-    var notLikedPairs = appState.notLikedPairs;
+    var pairs = appState.pairs;
     var favorites = appState.favorites;
 
     IconData icon;
@@ -213,10 +213,10 @@ class _GeneratorPageState extends State<GeneratorPage> {
                 key: PageStorageKey<String>('pairs_list'),
                 controller: _controllerBottom,
                 scrollDirection: Axis.vertical,
-                itemCount: notLikedPairs.length,
+                itemCount: pairs.length,
                 reverse: true,
                 itemBuilder: (context, index) {
-                  var currentPair = notLikedPairs.elementAt(index);
+                  var currentPair = pairs.elementAt(index);
                   IconData icon = appState.favorites.contains(currentPair)
                       ? Icons.favorite
                       : Icons.favorite_border;
