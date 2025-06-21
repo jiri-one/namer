@@ -30,8 +30,8 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
-  var favorites = <WordPair>{};
-  var pairs = <WordPair>{};
+  var favorites = <WordPair>[];
+  var pairs = <WordPair>[];
 
   void getNext() {
     current = WordPair.random();
