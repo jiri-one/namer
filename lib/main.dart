@@ -35,7 +35,7 @@ class MyAppState extends ChangeNotifier {
 
   void getNext() {
     current = WordPair.random();
-    if (!favorites.contains(current)) {
+    if (!favorites.contains(current) && !pairs.contains(current)) {
       pairs.add(current);
     }
     notifyListeners();
@@ -135,6 +135,13 @@ class _GeneratorPageState extends State<GeneratorPage> {
         duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
     _controllerBottom.animateTo(_controllerBottom.position.maxScrollExtent,
         duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _controllerTop.dispose();
+    _controllerBottom.dispose();
+    super.dispose();
   }
 
   @override
@@ -291,7 +298,7 @@ class FavoritesPage extends StatelessWidget {
                   appState.removeFavorite(pair);
                 }),
             onTap: () {
-              appState.current = pair;
+              appState.setCurrent(pair);
             },
           );
         },
